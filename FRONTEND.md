@@ -52,6 +52,17 @@ PayPal returns the buyer there with `?token=<orderId>` (done in the backend: `ma
 | Scaffold Next.js 16 + Tailwind 4 + AG Grid 36 | done |
 | API client (`lib/api.ts`) + login + seller shell (`app/(seller)/layout.tsx`) | done |
 | Confirm page (redirect flow, captures on PayPal return) | done (not yet clicked through against a live sandbox order) |
-| Case queue | pending |
-| Case detail | pending |
+| Case queue (`app/(seller)/cases/page.tsx`): AG Grid, custom theme, 9 custom cells, quick filter, saved column state, KPIs, dispute-rate gauge, 15 s refresh | done (type-checked; not yet viewed with real cases) |
+| Case detail (`app/(seller)/cases/[id]/page.tsx`): economics, receipt checks, evidence, draft editor with Save & re-check, Approve, Reject, Override, PDF preview, run agent | done (type-checked; not yet clicked through) |
 | Orders / issues / sim | pending |
+
+## Notes for the next agent
+
+- Run: backend on 8010 (see backend HANDOFF.md), then `npm run dev` here (port 3000; backend CORS allows
+  `http://localhost:3000`). Log in with `ADMIN_PASSWORD` from the backend `.env`.
+- To see real rows in the grid you need a dispute: run the backend LLM eval scenario or the sandbox flow.
+- The repo's git remote was lost when the Next.js scaffold's `.git` was copied over; re-add it with
+  `git remote add origin https://github.com/Bhuvansai-16/Countersign.git` (agents cannot write `.git/config` here).
+- Public buyer calls use `api(..., { auth: false })` and validate IDs from the URL; keep it that way (security review).
+- Next: `/orders`, `/issues`, `/sim` pages (same patterns as `/cases`), then click through the full flow, then the
+  JS SDK v6 button, then deploy.
