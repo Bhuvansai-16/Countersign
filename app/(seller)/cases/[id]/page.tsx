@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { api, ApiError, apiBlobUrl, money } from "@/lib/api";
+import { api, ApiError, apiPdfUrl, money } from "@/lib/api";
 import { Card, DECISION_TONE, hoursLabel, Pill, REASON_LABEL, STATE_TONE, STRENGTH_TONE } from "@/components/ui";
 
 type Section = { heading: string; text: string; refs: string[] };
@@ -44,9 +44,10 @@ export default function CaseDetailPage() {
     setDraft(detail.draft);
     setDirty(false);
     setProblems(detail.check_issues ?? []);
-    if (detail.pdf_url) setPdf(await apiBlobUrl(detail.pdf_url).catch(() => null));
+    if (detail.pdf_url) setPdf(await apiPdfUrl(detail.pdf_url).catch(() => null));
   }, [id]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount; state is set after the request resolves
   useEffect(() => { load().catch(() => setMsg("Could not load this case.")); }, [load]);
   useEffect(() => { // while the agent works, poll
     if (d?.case.state !== "ANALYZING") return;

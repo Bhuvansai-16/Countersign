@@ -54,7 +54,7 @@ PayPal returns the buyer there with `?token=<orderId>` (done in the backend: `ma
 | Confirm page (redirect flow, captures on PayPal return) | done (not yet clicked through against a live sandbox order) |
 | Case queue (`app/(seller)/cases/page.tsx`): AG Grid, custom theme, 9 custom cells, quick filter, saved column state, KPIs, dispute-rate gauge, 15 s refresh | done (type-checked; not yet viewed with real cases) |
 | Case detail (`app/(seller)/cases/[id]/page.tsx`): economics, receipt checks, evidence, draft editor with Save & re-check, Approve, Reject, Override, PDF preview, run agent | done (type-checked; not yet clicked through) |
-| Orders / issues / sim | pending |
+| Orders (grid + Add tracking / Mark delivered), Agent issues (approve offers), Sandbox controls (demo run, create dispute, simulator actions) | done (type-checked + lint clean; not yet clicked through) |
 
 ## Notes for the next agent
 
@@ -64,5 +64,6 @@ PayPal returns the buyer there with `?token=<orderId>` (done in the backend: `ma
 - The repo's git remote was lost when the Next.js scaffold's `.git` was copied over; re-add it with
   `git remote add origin https://github.com/Bhuvansai-16/Countersign.git` (agents cannot write `.git/config` here).
 - Public buyer calls use `api(..., { auth: false })` and validate IDs from the URL; keep it that way (security review).
-- Next: `/orders`, `/issues`, `/sim` pages (same patterns as `/cases`), then click through the full flow, then the
-  JS SDK v6 button, then deploy.
+- Next: click through every page against the running backend (fix what breaks), then the JS SDK v6 button,
+  then deploy (Render static/Node service), README with screenshots.
+- PDF previews go through `apiPdfUrl` (only `/api/` paths, blob forced to application/pdf): security review.

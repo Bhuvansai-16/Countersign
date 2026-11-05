@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 import { getToken, setToken } from "@/lib/api";
 
@@ -16,11 +16,10 @@ const NAV = [
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const path = usePathname();
-  const [ready, setReady] = useState(false);
+  const ready = useSyncExternalStore(() => () => {}, () => Boolean(getToken()), () => false);
 
   useEffect(() => {
     if (!getToken()) router.replace("/login");
-    else setReady(true);
   }, [router]);
 
   if (!ready) return null;

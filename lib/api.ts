@@ -46,10 +46,13 @@ export async function api<T = unknown>(path: string, init: RequestInit & { json?
   return data as T;
 }
 
-export async function apiBlobUrl(path: string): Promise<string> {
+// PDF previews only: relative /api/ paths, and the blob is always typed application/pdf so a hostile response
+// can never be rendered as same-origin HTML.
+export async function apiPdfUrl(path: string): Promise<string> {
+  if (!path.startsWith("/api/")) throw new ApiError(400, { detail: "unexpected PDF path" });
   const res = await fetch(`${API_BASE}${path}`, { headers: { Authorization: `Bearer ${getToken() ?? ""}` } });
   if (!res.ok) throw new ApiError(res.status, null);
-  return URL.createObjectURL(await res.blob());
+  return URL.createObjectURL(new Blob([await res.arrayBuffer()], { type: "application/pdf" }));
 }
 
 // --- shapes returned by the backend --------------------------------------------------------
