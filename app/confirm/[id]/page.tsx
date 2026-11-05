@@ -7,10 +7,15 @@ import { API_BASE, api, ApiError, Mandate, money } from "@/lib/api";
 
 type Phase = "loading" | "review" | "pay" | "capturing" | "paid" | "error";
 
+// IDs from the URL are validated before they go into an API path (no path traversal, no surprise endpoints).
+const MANDATE_ID = /^rcpt_[0-9a-f]{24}$/;
+const PAYPAL_ORDER_ID = /^[A-Z0-9]{8,30}$/;
+
 function ConfirmFlow() {
   const { id } = useParams<{ id: string }>();
   const search = useSearchParams();
-  const returnedOrder = search.get("token"); // PayPal sends the buyer back with ?token=<orderId>
+  const rawToken = search.get("token"); // PayPal sends the buyer back with ?token=<orderId>
+  const returnedOrder = rawToken && PAYPAL_ORDER_ID.test(rawToken) ? rawToken : null;
   const cancelled = search.get("cancelled") === "1";
   const [mandate, setMandate] = useState<Mandate | null>(null);
   const [phase, setPhase] = useState<Phase>("loading");
@@ -20,8 +25,13 @@ function ConfirmFlow() {
   const captureStarted = useRef(false);
 
   const load = useCallback(async () => {
+    if (!MANDATE_ID.test(id)) {
+      setError("This confirmation link is not valid.");
+      setPhase("error");
+      return;
+    }
     try {
-      const m = await api<Mandate>(`/api/mandates/${id}`);
+      const m = await api<Mandate>(`/api/mandates/${encodeURIComponent(id)}`, { auth: false });
       setMandate(m);
       setApproveUrl(m.approve_url);
       if (m.status === "CAPTURED") setPhase("paid");
@@ -42,7 +52,7 @@ function ConfirmFlow() {
       if (captureStarted.current) return;
       captureStarted.current = true;
       setPhase("capturing");
-      api<{ status: string; capture_id: string }>(`/api/orders/${returnedOrder}/capture`, { method: "POST" })
+      api<{ status: string; capture_id: string }>(`/api/orders/${encodeURIComponent(returnedOrder)}/capture`, { method: "POST", auth: false })
         .then((out) => {
           setCaptureId(out.capture_id);
           return load().then(() => setPhase("paid"));
@@ -59,8 +69,9 @@ function ConfirmFlow() {
   async function confirm() {
     setError("");
     try {
-      const out = await api<{ paypal_order_id: string; approve_url: string }>(`/api/mandates/${id}/confirm`, {
+      const out = await api<{ paypal_order_id: string; approve_url: string }>(`/api/mandates/${encodeURIComponent(id)}/confirm`, {
         method: "POST",
+        auth: false,
         json: { method: "hosted_page_click" },
       });
       setApproveUrl(out.approve_url);

@@ -26,9 +26,10 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T = unknown>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
+// Public buyer pages pass { auth: false } so a seller session in the same browser is never sent from them.
+export async function api<T = unknown>(path: string, init: RequestInit & { json?: unknown; auth?: boolean } = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  const token = getToken();
+  const token = init.auth === false ? null : getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
   let body = init.body;
   if (init.json !== undefined) {
