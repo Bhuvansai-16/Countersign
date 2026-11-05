@@ -1,0 +1,105 @@
+// Thin client for the Countersign backend (see ../Countersign-backend, FastAPI docs at {API_BASE}/docs).
+
+export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8010").replace(/\/$/, "");
+const TOKEN_KEY = "cs_token";
+
+export function getToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setToken(token: string | null) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* storage unavailable: session stays in memory only */
+  }
+}
+
+export class ApiError extends Error {
+  constructor(public status: number, public body: unknown) {
+    super(typeof body === "object" && body && "detail" in body ? String((body as { detail: unknown }).detail) : `HTTP ${status}`);
+  }
+}
+
+export async function api<T = unknown>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  const token = getToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  let body = init.body;
+  if (init.json !== undefined) {
+    headers.set("Content-Type", "application/json");
+    body = JSON.stringify(init.json);
+  }
+  const res = await fetch(`${API_BASE}${path}`, { ...init, headers, body });
+  if (res.status === 401 && typeof window !== "undefined" && !path.startsWith("/api/login")) {
+    setToken(null);
+  }
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) throw new ApiError(res.status, data);
+  return data as T;
+}
+
+export async function apiBlobUrl(path: string): Promise<string> {
+  const res = await fetch(`${API_BASE}${path}`, { headers: { Authorization: `Bearer ${getToken() ?? ""}` } });
+  if (!res.ok) throw new ApiError(res.status, null);
+  return URL.createObjectURL(await res.blob());
+}
+
+// --- shapes returned by the backend --------------------------------------------------------
+
+export type CaseRow = {
+  dispute_id: string;
+  reason: string | null;
+  stage: string | null;
+  status: string | null;
+  amount: string | null;
+  currency: string | null;
+  due_at: string | null;
+  hours_left: number | null;
+  fee: string | null;
+  sp_eligible: boolean | null;
+  receipt_strength: string | null;
+  evidence_completeness: number | null;
+  decision: string | null;
+  ev_saving: string | null;
+  state: string;
+  outcome: string | null;
+  dry_run: boolean;
+};
+
+export type Metrics = {
+  dispute_rate_90d: number;
+  txns_90d: number;
+  disputes_90d: number;
+  hv_threshold: number;
+  warn_threshold: number;
+  open_cases: number;
+  due_48h: number;
+  won: number;
+  lost: number;
+  dollars_defended: string;
+  simulated_history: boolean;
+};
+
+export type Mandate = {
+  mandate_id: string;
+  status: string;
+  instruction: string;
+  constraints: { max_amount: string; currency: string; attributes: Record<string, string>; expires_at: string };
+  cart: { items: { sku: string; name: string; qty: number; unit_price: string }[]; item_total: string; shipping: string; total: string };
+  agent: { id?: string; claimed_platform?: string; signed: boolean };
+  expires_at: string;
+  paypal_order_id: string | null;
+  approve_url: string | null;
+};
+
+export function money(value: string | number | null | undefined, currency = "USD"): string {
+  if (value === null || value === undefined || value === "") return "-";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(value));
+}
