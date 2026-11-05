@@ -51,7 +51,7 @@ PayPal returns the buyer there with `?token=<orderId>` (done in the backend: `ma
 | Brief (this file) | done |
 | Scaffold Next.js 16 + Tailwind 4 + AG Grid 36 | done |
 | API client (`lib/api.ts`) + login + seller shell (`app/(seller)/layout.tsx`) | done |
-| Confirm page (redirect flow, captures on PayPal return) | done (not yet clicked through against a live sandbox order) |
+| Confirm page (redirect flow, captures on PayPal return) | done; Confirm verified live: created sandbox order 24220106W24443329 with our custom_id. Not yet tested: Pay with PayPal (needs a sandbox buyer login) -> return -> capture |
 | Case queue (`app/(seller)/cases/page.tsx`): AG Grid, custom theme, 9 custom cells, quick filter, saved column state, KPIs, dispute-rate gauge, 15 s refresh | done (type-checked; not yet viewed with real cases) |
 | Case detail (`app/(seller)/cases/[id]/page.tsx`): economics, receipt checks, evidence, draft editor with Save & re-check, Approve, Reject, Override, PDF preview, run agent | done (type-checked; not yet clicked through) |
 | Orders (grid + Add tracking / Mark delivered), Agent issues (approve offers), Sandbox controls (demo run, create dispute, simulator actions) | done (type-checked + lint clean; not yet clicked through) |
@@ -67,3 +67,4 @@ PayPal returns the buyer there with `?token=<orderId>` (done in the backend: `ma
 - Next: click through every page against the running backend (fix what breaks), then the JS SDK v6 button,
   then deploy (Render static/Node service), README with screenshots.
 - PDF previews go through `apiPdfUrl` (only `/api/` paths, blob forced to application/pdf): security review.
+- Copy polish: the confirm page says "Your shopping agent custom" when the agent's claimed platform is `custom`; show the agent id too.
