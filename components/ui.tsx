@@ -4,7 +4,7 @@ import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-communi
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-// One custom AG Grid theme for every grid, driven by the app's CSS variables (works in light and dark).
+// One grid theme follows the product's warm palette.
 export const gridTheme = themeQuartz.withParams({
   backgroundColor: "var(--surface)",
   foregroundColor: "var(--text)",
@@ -16,9 +16,9 @@ export const gridTheme = themeQuartz.withParams({
   fontFamily: "var(--font-geist-sans)",
   fontSize: 13,
   headerFontWeight: 600,
-  rowHeight: 44,
-  headerHeight: 38,
-  wrapperBorderRadius: 12,
+  rowHeight: 52,
+  headerHeight: 44,
+  wrapperBorderRadius: 16,
 });
 
 type Tone = "neutral" | "accent" | "ok" | "warn" | "danger" | "info";

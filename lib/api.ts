@@ -2,6 +2,7 @@
 
 export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8010").replace(/\/$/, "");
 const TOKEN_KEY = "cs_token";
+const SELLER_SESSION_CHANGE = "countersign:seller-session";
 
 export function getToken(): string | null {
   try {
@@ -15,9 +16,23 @@ export function setToken(token: string | null) {
   try {
     if (token) localStorage.setItem(TOKEN_KEY, token);
     else localStorage.removeItem(TOKEN_KEY);
+    if (typeof window !== "undefined") window.dispatchEvent(new Event(SELLER_SESSION_CHANGE));
   } catch {
-    /* storage unavailable: session stays in memory only */
+    /* Browser storage may be unavailable. */
   }
+}
+
+export function subscribeSellerSession(listener: () => void) {
+  window.addEventListener(SELLER_SESSION_CHANGE, listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    window.removeEventListener(SELLER_SESSION_CHANGE, listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
+function clearRejectedSellerSession(status: number, token: string | null) {
+  if (status === 401 && token && getToken() === token) setToken(null);
 }
 
 export class ApiError extends Error {
@@ -29,17 +44,16 @@ export class ApiError extends Error {
 // Public buyer pages pass { auth: false } so a seller session in the same browser is never sent from them.
 export async function api<T = unknown>(path: string, init: RequestInit & { json?: unknown; auth?: boolean } = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  const token = init.auth === false ? null : getToken();
+  const shopping = path.startsWith("/api/demo/shopping/");
+  const token = shopping || init.auth === false || path === "/api/login" ? null : getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
   let body = init.body;
   if (init.json !== undefined) {
     headers.set("Content-Type", "application/json");
     body = JSON.stringify(init.json);
   }
-  const res = await fetch(`${API_BASE}${path}`, { ...init, headers, body });
-  if (res.status === 401 && typeof window !== "undefined" && !path.startsWith("/api/login")) {
-    setToken(null);
-  }
+  const res = await fetch(`${API_BASE}${path}`, { ...init, credentials: shopping ? "include" : init.credentials, headers, body });
+  clearRejectedSellerSession(res.status, token);
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
   if (!res.ok) throw new ApiError(res.status, data);
@@ -50,7 +64,9 @@ export async function api<T = unknown>(path: string, init: RequestInit & { json?
 // can never be rendered as same-origin HTML.
 export async function apiPdfUrl(path: string): Promise<string> {
   if (!path.startsWith("/api/")) throw new ApiError(400, { detail: "unexpected PDF path" });
-  const res = await fetch(`${API_BASE}${path}`, { headers: { Authorization: `Bearer ${getToken() ?? ""}` } });
+  const token = getToken();
+  const res = await fetch(`${API_BASE}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+  clearRejectedSellerSession(res.status, token);
   if (!res.ok) throw new ApiError(res.status, null);
   return URL.createObjectURL(new Blob([await res.arrayBuffer()], { type: "application/pdf" }));
 }

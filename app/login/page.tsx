@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { api, setToken } from "@/lib/api";
+import { api, ApiError, getToken, setToken } from "@/lib/api";
+import { Brand } from "@/components/brand";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,38 +19,50 @@ export default function LoginPage() {
     try {
       const { token } = await api<{ token: string }>("/api/login", { method: "POST", json: { password } });
       setToken(token);
+      if (getToken() !== token) {
+        setError("Allow browser storage to sign in to the seller console.");
+        return;
+      }
       router.replace("/cases");
-    } catch {
-      setError("That password is not right.");
+    } catch (error) {
+      setError(error instanceof ApiError && error.status === 401
+        ? "That seller password is incorrect."
+        : "Could not sign in. Check that Countersign is running and try again.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <main className="grid min-h-screen place-items-center px-4">
-      <form onSubmit={submit} className="w-full max-w-sm rounded-xl border border-border bg-surface p-6 shadow-sm">
-        <h1 className="text-lg font-semibold">Countersign seller console</h1>
-        <p className="mt-1 text-sm text-muted">Sign in to review disputes and approve responses.</p>
-        <label className="mt-5 block text-sm font-medium" htmlFor="password">Password</label>
+    <main className="login-shell">
+      <section className="login-art">
+        <Brand />
+        <div><h2>Orders and<br /><em>disputes.</em></h2><p className="mt-6 max-w-sm text-sm leading-7">Review payment receipts and approve dispute responses.</p></div>
+        <p className="text-xs">Sandbox workspace</p>
+      </section>
+      <div className="login-form-area"><form onSubmit={submit} className="login-form">
+        <p className="eyebrow mb-4">Merchant workspace</p>
+        <h1>Seller sign-in</h1>
+        <p className="mt-4 text-sm leading-6 text-muted">Enter your Countersign seller password.</p>
+        <label className="mt-5 block text-sm font-medium" htmlFor="password">Seller password</label>
         <input
           id="password"
           type="password"
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 w-full rounded-md border border-border bg-surface-2 px-3 py-2 outline-none focus:border-accent"
+          className="form-field"
           required
         />
         {error && <p className="mt-2 text-sm text-danger" role="alert">{error}</p>}
         <button
           type="submit"
           disabled={busy}
-          className="mt-4 w-full rounded-md bg-accent px-3 py-2 font-medium text-white disabled:opacity-60 dark:text-black"
+          className="primary-button mt-5 w-full"
         >
           {busy ? "Signing in…" : "Sign in"}
         </button>
-      </form>
+      </form></div>
     </main>
   );
 }

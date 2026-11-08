@@ -77,6 +77,7 @@ export default function CaseDetailPage() {
   const econ = d.economics ?? {};
   const due = hoursLabel(typeof tri.hours_left === "number" ? tri.hours_left : null);
   const awaiting = d.case.state === "AWAITING_APPROVAL";
+  const simulationComplete = d.case.dry_run && ["SUBMITTED", "ACCEPTED"].includes(d.case.state);
 
   const setSection = (i: number, patch: Partial<Section>) => {
     if (!draft) return;
@@ -87,11 +88,11 @@ export default function CaseDetailPage() {
   return (
     <div className="space-y-5">
       <Link href="/cases" className="text-sm text-muted hover:text-text">← All disputes</Link>
+      <div className="workspace-page-heading"><p className="eyebrow">Case review</p><h1>{REASON_LABEL[String(tri.reason)] ?? "Purchase dispute"}</h1><p className="mono">{d.case.dispute_id}</p></div>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mono text-2xl font-semibold">{d.case.dispute_id}</h1>
         <Pill>{REASON_LABEL[String(tri.reason)] ?? String(tri.reason ?? "")}</Pill>
         <Pill tone={due.tone}>Due {due.text}</Pill>
-        <Pill tone={STATE_TONE[d.case.state] ?? "neutral"}>{d.case.state.replaceAll("_", " ").toLowerCase()}</Pill>
+        <Pill tone={STATE_TONE[d.case.state] ?? "neutral"}>{simulationComplete ? "simulation complete" : d.case.state.replaceAll("_", " ").toLowerCase()}</Pill>
         {d.case.dry_run && <Pill tone="info">dry run: submission simulated</Pill>}
         <span className="ml-auto text-xl font-semibold">{money(String(tri.amount ?? ""), String(tri.currency ?? "USD"))}</span>
       </div>
@@ -124,7 +125,7 @@ export default function CaseDetailPage() {
                 </li>
               ))}
             </ul>
-          ) : <p className="mt-2 text-sm text-muted">This order was not placed through Countersign.</p>}
+          ) : <p className="mt-2 text-sm text-muted">Receipt verification is unavailable for this case.</p>}
         </Card>
 
         <Card title="Evidence">
@@ -137,7 +138,7 @@ export default function CaseDetailPage() {
         </Card>
       </div>
 
-      <Card title="Response to PayPal (drafted by the agent, checked against the evidence)">
+      <Card title={d.case.dry_run ? "Simulated response" : "Response to PayPal"}>
         {!draft ? (
           <div className="flex items-center gap-3 text-sm text-muted">
             {d.case.state === "ANALYZING" ? "The agent is preparing this case…" : "No draft yet."}
@@ -150,7 +151,7 @@ export default function CaseDetailPage() {
           <div className="space-y-3">
             <p className="text-sm">Action: <strong>{ACTION_LABEL[draft.action] ?? draft.action}</strong>
               {draft.offer && <> · {draft.offer.offer_type.replaceAll("_", " ").toLowerCase()} {money(draft.offer.amount)}</>}</p>
-            <label className="block text-sm font-medium" htmlFor="note">Note to PayPal ({draft.note.length}/2000)</label>
+            <label className="block text-sm font-medium" htmlFor="note">Response note ({draft.note.length}/2000)</label>
             <textarea id="note" value={draft.note} maxLength={2000} rows={4} disabled={!awaiting}
               onChange={(e) => { setDraft({ ...draft, note: e.target.value }); setDirty(true); }}
               className="w-full rounded-md border border-border bg-surface-2 p-2 text-sm outline-none focus:border-accent" />
@@ -173,9 +174,9 @@ export default function CaseDetailPage() {
                     className="rounded-md bg-accent px-4 py-2 font-medium text-white dark:text-black">Save & re-check</button>
                 ) : (
                   <button disabled={busy || problems.length > 0 || !d.payload_hash}
-                    onClick={() => run("Approved. Submitted to PayPal.", () => api(`/api/cases/${encodeURIComponent(id)}/approve`, { method: "POST", json: { action: draft.action, payload_hash: d.payload_hash } }))}
+                    onClick={() => run(d.case.dry_run ? "Dry-run approval recorded." : "Approval recorded.", () => api(`/api/cases/${encodeURIComponent(id)}/approve`, { method: "POST", json: { action: draft.action, payload_hash: d.payload_hash } }))}
                     className="rounded-md bg-accent px-4 py-2 font-semibold text-white disabled:opacity-50 dark:text-black">
-                    Approve & {ACTION_LABEL[draft.action]?.toLowerCase() ?? "submit"}
+                    {d.case.dry_run ? "Approve dry run" : `Approve & ${ACTION_LABEL[draft.action]?.toLowerCase() ?? "submit"}`}
                   </button>
                 )}
                 <button disabled={busy} onClick={() => run("Rejected. Handle this case manually.", () => api(`/api/cases/${encodeURIComponent(id)}/reject`, { method: "POST" }))}
@@ -203,7 +204,7 @@ export default function CaseDetailPage() {
       )}
 
       {pdf && (
-        <Card title="Evidence pack (PDF sent with the response)">
+        <Card title="Evidence PDF">
           <iframe src={pdf} title="Evidence PDF" className="h-[600px] w-full rounded border border-border" />
         </Card>
       )}

@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import { API_BASE, api, ApiError, Mandate, money } from "@/lib/api";
+import { finishCheckout } from "@/lib/checkout-return";
 
 type Phase = "loading" | "review" | "pay" | "capturing" | "paid" | "error";
 
@@ -55,7 +56,7 @@ function ConfirmFlow() {
       api<{ status: string; capture_id: string }>(`/api/orders/${encodeURIComponent(returnedOrder)}/capture`, { method: "POST", auth: false })
         .then((out) => {
           setCaptureId(out.capture_id);
-          return load().then(() => setPhase("paid"));
+          return load();
         })
         .catch((e) => {
           setError(e instanceof ApiError ? e.message : "PayPal could not complete the payment.");
@@ -66,6 +67,10 @@ function ConfirmFlow() {
       load();
     }
   }, [returnedOrder, cancelled, load]);
+
+  useEffect(() => {
+    if (phase === "paid" && mandate?.status === "CAPTURED") return finishCheckout(id);
+  }, [phase, mandate?.status, id]);
 
   async function confirm() {
     setError("");
@@ -90,15 +95,18 @@ function ConfirmFlow() {
 
   const c = mandate.constraints;
   const attrs = Object.entries(c.attributes ?? {});
+  if (phase === "paid") return <section className="checkout-paid"><span className="checkout-check" aria-hidden="true">✓</span><p className="eyebrow">Payment received</p><h1>All signed.<br /><em>All yours.</em></h1><p>{money(mandate.cart.total, c.currency)} paid. Your signed receipt keeps the details together.</p><p role="status" className="checkout-returning">Returning to your conversation…<br />This tab closes once your shopping page receives the payment.</p><div className="checkout-paid-actions"><a className="primary-button" href={`/shop?paid=${mandate.mandate_id}`}>Back to shopping →</a><a className="text-button" href={`${API_BASE}/verify/${mandate.mandate_id}`} target="_blank" rel="noreferrer">View signed receipt ↗</a></div>{captureId && <p className="checkout-reference">PayPal reference {captureId}</p>}</section>;
+
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border border-border bg-surface p-5">
+    <><div className="checkout-page-heading"><h1>{phase === "pay" ? "Continue to PayPal" : "Review purchase"}</h1><span className="environment-label">Sandbox payments</span></div>
+    <div className="checkout-layout">
+      <section className="checkout-intent">
+        <h2>Your request</h2>
         <p className="text-sm text-muted">
-          Your shopping agent <span className="mono text-text">{mandate.agent.claimed_platform ?? "agent"}</span>
+          Prepared by your shopping assistant.
           {mandate.agent.signed && <span className="ml-2 rounded bg-ok-soft px-1.5 py-0.5 text-xs text-ok">signed request</span>}{" "}
-          wants to buy this for you.
         </p>
-        <blockquote className="mt-3 border-l-2 border-accent pl-3 text-base">“{mandate.instruction}”</blockquote>
+        <blockquote className="checkout-request">“{mandate.instruction.split("\n").filter((line) => !line.startsWith("Selected candidate:")).join("\n")}”</blockquote>
         <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
           <div>
             <dt className="text-muted">Your spending cap</dt>
@@ -117,13 +125,13 @@ function ConfirmFlow() {
         </dl>
       </section>
 
-      <section className="rounded-xl border border-border bg-surface p-5">
-        <h2 className="font-semibold">Cart</h2>
+      <section className="checkout-summary">
+        <h2>Order summary</h2>
         <table className="mt-3 w-full text-sm">
           <tbody>
             {mandate.cart.items.map((i) => (
               <tr key={i.sku} className="border-b border-border">
-                <td className="py-2">{i.name} <span className="text-muted">× {i.qty}</span></td>
+                <td className="py-2">{i.name.replace(/^\[SANDBOX COPY\]\s*/, "")} <span className="text-muted">× {i.qty}</span></td>
                 <td className="py-2 text-right">{money(Number(i.unit_price) * i.qty, c.currency)}</td>
               </tr>
             ))}
@@ -136,45 +144,32 @@ function ConfirmFlow() {
         )}
       </section>
 
+      <section className="checkout-actions">
       {error && <p className="text-sm text-danger" role="alert">{error}</p>}
       {cancelled && phase === "pay" && <p className="text-sm text-warn">You cancelled at PayPal. You can try again.</p>}
 
       {phase === "review" && (
-        <button onClick={confirm} className="w-full rounded-lg bg-accent px-4 py-3 text-base font-semibold text-white dark:text-black">
-          Confirm this purchase
+        <button onClick={confirm} className="primary-button w-full">
+          Confirm purchase →
         </button>
       )}
       {phase === "pay" && approveUrl && (
-        <a href={approveUrl} className="block w-full rounded-lg bg-[#ffc439] px-4 py-3 text-center text-base font-semibold text-[#111]">
-          Pay with PayPal
+        <a href={approveUrl} className="paypal-button">
+          Continue with PayPal →
         </a>
       )}
-      {phase === "paid" && (
-        <div className="rounded-xl border border-ok bg-ok-soft p-5">
-          <p className="font-semibold text-ok">Paid. Thank you!</p>
-          <p className="mt-1 text-sm">
-            {captureId && <>PayPal capture <span className="mono">{captureId}</span>. </>}
-            Your confirmation is recorded in a signed receipt.{" "}
-            <a className="underline" href={`${API_BASE}/verify/${mandate.mandate_id}`} target="_blank" rel="noreferrer">
-              Verify it against PayPal
-            </a>
-          </p>
-        </div>
-      )}
-      <p className="text-xs text-muted">
-        Your agent can quote but cannot pay. Confirming here and approving in PayPal is what authorises this purchase.
-      </p>
-    </div>
+      <p className="checkout-fine-print">You approve the payment in PayPal. This sample order is with Maya&apos;s Loom in PayPal Sandbox, not the source retailer. Your instructions and purchase are recorded in a signed receipt.</p>
+      </section>
+    </div></>
   );
 }
 
 export default function ConfirmPage() {
   return (
-    <main className="mx-auto max-w-xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Confirm your purchase</h1>
+    <><a href="#main-content" className="skip-link">Skip to content</a><main id="main-content" className="checkout-page">
       <Suspense fallback={<p className="text-muted">Loading…</p>}>
         <ConfirmFlow />
       </Suspense>
-    </main>
+    </main></>
   );
 }

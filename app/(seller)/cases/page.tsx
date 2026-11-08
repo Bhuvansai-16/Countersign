@@ -55,7 +55,9 @@ const DecisionCell = ({ data }: Cell) => {
 };
 const StateCell = ({ data }: Cell) => (
   <span className="flex items-center gap-1">
-    <Pill tone={STATE_TONE[data?.state ?? ""] ?? "neutral"}>{data?.state.replaceAll("_", " ").toLowerCase()}</Pill>
+    <Pill tone={STATE_TONE[data?.state ?? ""] ?? "neutral"}>
+      {data?.dry_run && ["SUBMITTED", "ACCEPTED"].includes(data.state) ? "simulation complete" : data?.state.replaceAll("_", " ").toLowerCase()}
+    </Pill>
     {data?.dry_run && <Pill tone="info" title="Submission is simulated">dry run</Pill>}
   </span>
 );
@@ -127,8 +129,9 @@ export default function CasesPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
+          <p className="eyebrow mb-2">Merchant workspace</p>
           <h1 className="text-2xl font-semibold tracking-tight">Disputes</h1>
-          <p className="text-sm text-muted">Sorted by deadline. The agent prepares each case; nothing is sent to PayPal until you approve.</p>
+          <p className="mt-2 text-sm text-muted">The next right action, in deadline order. Every response waits for your approval.</p>
         </div>
         <input
           value={filter}
@@ -157,7 +160,7 @@ export default function CasesPage() {
           columnDefs={columns}
           quickFilterText={filter}
           getRowId={(p) => p.data.dispute_id}
-          overlayNoRowsTemplate="No disputes yet. They appear here when PayPal sends a dispute webhook."
+          overlayNoRowsTemplate="No disputes need your attention. New cases will appear here."
           onGridReady={(e) => {
             setGridApi(e.api);
             try {

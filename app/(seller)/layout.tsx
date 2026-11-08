@@ -2,57 +2,61 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useSyncExternalStore } from "react";
 
-import { getToken, setToken } from "@/lib/api";
+import { getToken, setToken, subscribeSellerSession } from "@/lib/api";
+import { Brand } from "@/components/brand";
 
 const NAV = [
   { href: "/cases", label: "Disputes" },
   { href: "/orders", label: "Orders" },
-  { href: "/issues", label: "Agent issues" },
-  { href: "/sim", label: "Sandbox" },
+  { href: "/issues", label: "Resolutions" },
+  { href: "/sim", label: "Test tools" },
 ];
 
-export default function SellerLayout({ children }: { children: React.ReactNode }) {
+function SellerWorkspace({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const path = usePathname();
-  const ready = useSyncExternalStore(() => () => {}, () => Boolean(getToken()), () => false);
+  const token = useSyncExternalStore(subscribeSellerSession, getToken, () => null);
 
   useEffect(() => {
-    if (!getToken()) router.replace("/login");
-  }, [router]);
+    if (!token && !getToken()) router.replace("/login");
+  }, [router, token]);
 
-  if (!ready) return null;
+  if (!token) return null;
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-3">
-          <Link href="/cases" className="font-semibold tracking-tight">
-            Countersign
-          </Link>
-          <nav className="flex gap-1 overflow-x-auto text-sm">
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <header className="product-header">
+        <div className="product-header-inner">
+          <Brand href="/cases" />
+          <nav className="product-nav" aria-label="Merchant workspace">
             {NAV.map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
-                className={`rounded-md px-3 py-1.5 ${path.startsWith(n.href) ? "bg-accent-soft font-medium text-accent" : "text-muted hover:text-text"}`}
+                aria-current={path.startsWith(n.href) ? "page" : undefined}
               >
                 {n.label}
               </Link>
             ))}
           </nav>
+          <div className="header-actions">
+          <span className="environment-label">Sandbox payments</span>
           <button
-            className="ml-auto text-sm text-muted hover:text-text"
-            onClick={() => {
-              setToken(null);
-              router.replace("/login");
-            }}
+            className="header-link"
+            onClick={() => setToken(null)}
           >
             Sign out
           </button>
+          </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+      <main id="main-content" className="workspace-shell">{children}</main>
     </div>
   );
+}
+
+export default function SellerLayout({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={null}><SellerWorkspace>{children}</SellerWorkspace></Suspense>;
 }

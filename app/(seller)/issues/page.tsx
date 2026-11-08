@@ -29,12 +29,13 @@ export default function IssuesPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Agent issues</h1>
-        <p className="text-sm text-muted">Problems reported by buyers&apos; agents before a dispute. Settle them here and avoid the dispute fee.</p>
+      <div className="workspace-page-heading">
+        <p className="eyebrow">Merchant workspace</p>
+        <h1>Resolutions</h1>
+        <p>Work things out before they become disputes. Review requests and approve the right offer.</p>
       </div>
       {msg && <p className="text-sm" role="status">{msg}</p>}
-      {issues?.length === 0 && <p className="text-sm text-muted">No issues reported yet.</p>}
+      {issues?.length === 0 && <div className="workspace-empty"><span aria-hidden="true">✓</span><h2>Nothing to resolve.</h2><p>When a buyer reports an issue, the request and a proposed response will appear here.</p></div>}
       {issues?.map((i) => (
         <Card key={i.issue_id}>
           <div className="flex flex-wrap items-center gap-2">
@@ -51,7 +52,7 @@ export default function IssuesPage() {
           </p>
           {i.resolution && <p className="mt-1 text-sm text-ok">Resolved: {JSON.stringify(i.resolution)}</p>}
           {i.state === "PROPOSED" && (
-            <button onClick={() => approve(i)} className="mt-3 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white dark:text-black">
+            <button onClick={() => approve(i)} className="primary-button mt-3">
               Approve this offer
             </button>
           )}
