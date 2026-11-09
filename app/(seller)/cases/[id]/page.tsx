@@ -23,7 +23,12 @@ type Detail = {
   payload_hash: string | null;
   pdf_url: string | null;
   allowed_actions: string[];
+  can_escalate: boolean;
+  paypal: { status: string | null; stage: string | null; outcome: string | null };
 };
+
+// The PayPal action link each response type needs; PayPal only offers evidence once a case is a claim.
+const REQUIRED_REL: Record<string, string> = { PROVIDE_EVIDENCE: "provide_evidence", MAKE_OFFER: "make_offer", ACCEPT_CLAIM: "accept_claim" };
 
 const ACTION_LABEL: Record<string, string> = { PROVIDE_EVIDENCE: "Submit evidence", MAKE_OFFER: "Send offer", ACCEPT_CLAIM: "Accept claim" };
 
@@ -78,6 +83,8 @@ export default function CaseDetailPage() {
   const due = hoursLabel(typeof tri.hours_left === "number" ? tri.hours_left : null);
   const awaiting = d.case.state === "AWAITING_APPROVAL";
   const simulationComplete = d.case.dry_run && ["SUBMITTED", "ACCEPTED"].includes(d.case.state);
+  const actionReady = !draft || d.case.dry_run || d.allowed_actions.includes(REQUIRED_REL[draft.action]);
+  const paypalStatus = (d.paypal.status ?? "").replaceAll("_", " ").toLowerCase();
 
   const setSection = (i: number, patch: Partial<Section>) => {
     if (!draft) return;
@@ -98,6 +105,27 @@ export default function CaseDetailPage() {
       </div>
       {d.case.error && <p className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{d.case.error}</p>}
       {msg && <p className="rounded-md bg-surface-2 px-3 py-2 text-sm" role="status">{msg}</p>}
+      {d.case.state === "SUBMITTED" && !d.case.dry_run && (
+        <p className="rounded-md bg-info-soft px-3 py-2 text-sm text-info" role="status">
+          Submitted to PayPal. PayPal is reviewing the case ({paypalStatus || "status pending"}); the outcome appears here when PayPal rules.
+        </p>
+      )}
+      {awaiting && draft && !actionReady && (
+        <div className="rounded-md bg-warn-soft px-3 py-2 text-sm text-warn" role="status">
+          <p>PayPal does not accept this response yet (stage {d.paypal.stage?.toLowerCase() ?? "unknown"}). {d.can_escalate
+            ? "Evidence can be submitted once the case is escalated to a claim; PayPal usually enables it within a few minutes."
+            : "Check again shortly; PayPal enables seller actions a few minutes after a dispute opens."}</p>
+          <div className="mt-2 flex gap-2">
+            {d.can_escalate && (
+              <button disabled={busy} className="primary-button"
+                onClick={() => run("Escalated to a claim. PayPal will enable evidence shortly; refresh in a few minutes.", () => api(`/api/cases/${encodeURIComponent(id)}/escalate`, { method: "POST", json: { note: "The order matched the buyer's confirmed, signed instruction. Escalating so we can submit evidence." } }))}>
+                Escalate to claim
+              </button>
+            )}
+            <button disabled={busy} className="secondary-button" onClick={() => run("Checked PayPal for the latest actions.", async () => undefined)}>Check again</button>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card title="Recommendation">
@@ -173,7 +201,7 @@ export default function CaseDetailPage() {
                   <button disabled={busy} onClick={() => run("Draft saved and re-checked.", () => api(`/api/cases/${encodeURIComponent(id)}/draft`, { method: "PUT", json: draft }))}
                     className="rounded-md bg-accent px-4 py-2 font-medium text-white dark:text-black">Save & re-check</button>
                 ) : (
-                  <button disabled={busy || problems.length > 0 || !d.payload_hash}
+                  <button disabled={busy || problems.length > 0 || !d.payload_hash || !actionReady}
                     onClick={() => run(d.case.dry_run ? "Dry-run approval recorded." : "Approval recorded.", () => api(`/api/cases/${encodeURIComponent(id)}/approve`, { method: "POST", json: { action: draft.action, payload_hash: d.payload_hash } }))}
                     className="rounded-md bg-accent px-4 py-2 font-semibold text-white disabled:opacity-50 dark:text-black">
                     {d.case.dry_run ? "Approve dry run" : `Approve & ${ACTION_LABEL[draft.action]?.toLowerCase() ?? "submit"}`}

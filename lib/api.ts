@@ -100,6 +100,7 @@ export type Metrics = {
   hv_threshold: number;
   warn_threshold: number;
   open_cases: number;
+  awaiting_paypal: number;
   due_48h: number;
   won: number;
   lost: number;

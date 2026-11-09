@@ -144,7 +144,7 @@ export default function CasesPage() {
 
       {metrics && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Card><p className="text-xs text-muted">Open cases</p><p className="text-2xl font-semibold">{metrics.open_cases}</p></Card>
+          <Card><p className="text-xs text-muted">Open cases</p><p className="text-2xl font-semibold">{metrics.open_cases}</p>{metrics.awaiting_paypal > 0 && <p className="mt-1 text-xs text-muted">{metrics.awaiting_paypal} under PayPal review</p>}</Card>
           <Card><p className="text-xs text-muted">Due within 48 h</p><p className={`text-2xl font-semibold ${metrics.due_48h ? "text-warn" : ""}`}>{metrics.due_48h}</p></Card>
           <Card><p className="text-xs text-muted">Won / lost</p><p className="text-2xl font-semibold">{metrics.won} <span className="text-muted">/ {metrics.lost}</span></p></Card>
           <Card><p className="text-xs text-muted">Dollars defended</p><p className="text-2xl font-semibold text-ok">{money(metrics.dollars_defended)}</p></Card>
