@@ -74,16 +74,14 @@ function RateGauge({ m }: { m: Metrics }) {
   const tone = m.dispute_rate_90d >= m.hv_threshold ? "bg-danger" : m.dispute_rate_90d >= m.warn_threshold ? "bg-warn" : "bg-ok";
   return (
     <div>
-      <div className="flex items-baseline justify-between">
-        <span className="text-2xl font-semibold">{(m.dispute_rate_90d * 100).toFixed(2)}%</span>
-        <span className="text-xs text-muted">{m.disputes_90d} of {m.txns_90d} txns, 90 days{m.simulated_history ? " (incl. simulated history)" : ""}</span>
-      </div>
+      <span className="text-2xl font-semibold">{(m.dispute_rate_90d * 100).toFixed(2)}%</span>
+      <p className="text-xs text-muted">{m.disputes_90d} of {m.txns_90d} txns · 90 days{m.simulated_history ? " · incl. simulated" : ""}</p>
       <div className="relative mt-2 h-2 rounded bg-surface-2">
         <div className={`h-full rounded ${tone}`} style={{ width: pos(m.dispute_rate_90d) }} />
         <div className="absolute -top-1 h-4 w-px bg-warn" style={{ left: pos(m.warn_threshold) }} title="1.0% warning" />
         <div className="absolute -top-1 h-4 w-px bg-danger" style={{ left: pos(m.hv_threshold) }} title="1.5% PayPal high-volume threshold" />
       </div>
-      <div className="mt-1 flex justify-between text-[11px] text-muted"><span>0%</span><span>warn 1.0% · fee $30 + 3-day window at 1.5%</span></div>
+      <p className="mt-1 text-[11px] text-muted" title="At 1.5% PayPal charges $30 per dispute and shortens the response window to 3 days">Warn 1.0% · PayPal limit 1.5%</p>
     </div>
   );
 }

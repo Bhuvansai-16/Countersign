@@ -5,7 +5,7 @@ import { Brand } from "@/components/brand";
 export default function Home() {
   return <div className="landing-page">
     <a href="#main-content" className="skip-link">Skip to content</a>
-    <header className="product-header"><div className="product-header-inner"><Brand href="/" /><nav className="header-actions" aria-label="Main navigation"><Link href="/shop" className="primary-button">Open app <span aria-hidden="true">↗</span></Link></nav></div></header>
+    <header className="product-header"><div className="product-header-inner"><Brand href="/" /><nav className="header-actions" aria-label="Main navigation"><Link href="/login" className="text-button">Merchant sign-in</Link><Link href="/shop" className="primary-button">Open app <span aria-hidden="true">↗</span></Link></nav></div></header>
     <main id="main-content">
       <section className="landing-hero">
         <div className="landing-copy"><p className="eyebrow">Shopping, with your say.</p><h1>A little help.<br /><em>A better find.</em></h1><p>Find what fits. Compare the details.<br />Approve every purchase.</p><Link href="/shop" className="primary-button">Open app <span aria-hidden="true">→</span></Link><span className="landing-no-login">No account. Just start exploring.</span></div>
