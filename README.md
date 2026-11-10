@@ -4,7 +4,7 @@
 
 - Demo video: https://youtu.be/wKxl8Abr4Gw
 - Live app (PayPal sandbox): https://countersign-black.vercel.app
-- Backend, architecture, PayPal APIs and the **Tools** section: https://github.com/Bhuvansai-16/Countersign-backend
+- Backend source: [`backend/`](backend/) (architecture, PayPal APIs and the **Tools** section are in [backend/README.md](backend/README.md))
 
 ## What's here
 

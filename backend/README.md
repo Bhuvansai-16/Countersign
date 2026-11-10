@@ -11,7 +11,7 @@ response. **Nothing reaches PayPal until the seller approves.**
 - Demo video: https://youtu.be/wKxl8Abr4Gw
 - Live app (sandbox): https://countersign-black.vercel.app (shopper: no login; merchant console: `/login`)
 - API (sandbox): https://countersign-api-z0wu.onrender.com · OpenAPI at `/docs` and `/openapi.json`
-- Frontend source: https://github.com/Bhuvansai-16/Countersign
+- Full source (frontend + this backend under `backend/`): https://github.com/Bhuvansai-16/Countersign
 
 Everything runs against **PayPal sandbox**. No real money moves.
 
