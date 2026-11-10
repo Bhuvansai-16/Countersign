@@ -1,13 +1,13 @@
 # Countersign frontend: brief and progress
 
 Read with `../Countersign-backend/docs/HANDOFF.md` (backend status, how to run) and
-`../Countersign-backend/docs/design.md` §12 (API contract). Live API docs: `http://localhost:8010/docs` when the
+`../Countersign-backend/docs/design.md` §12 (API contract). Live API docs: `http://localhost:8000/docs` when the
 backend runs. This file is the frontend's plan and handoff; update the Progress table as you go.
 
 ## Stack
 
 Next.js (App Router, TypeScript) · Tailwind CSS · AG Grid Community (React) with a custom theme via the Theming API ·
-PayPal JS SDK v6 (sandbox). No other UI kit. Env: `NEXT_PUBLIC_API_BASE` (default `http://localhost:8010`),
+PayPal JS SDK v6 (sandbox). No other UI kit. Env: `NEXT_PUBLIC_API_BASE` (default `http://localhost:8000`),
 `NEXT_PUBLIC_PAYPAL_CLIENT_ID` (sandbox client ID, public).
 
 Auth: `POST /api/login {password}` returns a token; keep it in `localStorage` (`cs_token`) and send
@@ -62,7 +62,7 @@ November 6: public landing → Open app → shopping, with no shopper login. Cha
 
 ## Notes for the next agent
 
-- Run: backend on 8010 (see backend `docs/RUN_LOCAL.md`), then `node node_modules/next/dist/bin/next dev --port 3000` here. Open `http://localhost:3000`; shopping needs no login. Merchant-only `/login` uses `ADMIN_PASSWORD` entered locally.
+- Run: backend on 8000 (see backend `docs/RUN_LOCAL.md`), then `node node_modules/next/dist/bin/next dev --port 3000` here. Open `http://localhost:3000`; shopping needs no login. Merchant-only `/login` uses `ADMIN_PASSWORD` entered locally.
 - To see real rows in the grid you need a dispute: run the backend LLM eval scenario or the sandbox flow.
 - The repo's git remote was lost when the Next.js scaffold's `.git` was copied over; re-add it with
   `git remote add origin https://github.com/Bhuvansai-16/Countersign.git` (agents cannot write `.git/config` here).

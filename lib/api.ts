@@ -1,6 +1,6 @@
 // Thin client for the Countersign backend (see ../Countersign-backend, FastAPI docs at {API_BASE}/docs).
 
-export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8010").replace(/\/$/, "");
+export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000").replace(/\/$/, "");
 const TOKEN_KEY = "cs_token";
 const SELLER_SESSION_CHANGE = "countersign:seller-session";
 
