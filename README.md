@@ -2,7 +2,7 @@
 
 **Signed receipts for AI agent purchases, and a dispute agent that uses them.** Built for the PayPal AI Hackathon.
 
-- Demo video: https://youtu.be/wKxl8Abr4Gw
+- Demo video: https://youtu.be/MLhWkL7F9A0
 - Live app (PayPal sandbox): https://countersign-black.vercel.app
 - Backend source: [`backend/`](backend/) (architecture, PayPal APIs and the **Tools** section are in [backend/README.md](backend/README.md))
 
